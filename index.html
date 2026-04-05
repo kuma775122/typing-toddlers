@@ -24,7 +24,7 @@
     padding: 2vh 3vw;
     display: block;
     color: #fff;
-    font-size: 15vh;
+    font-size: 22.5vh;
     line-height: 1;
     white-space: normal;
     word-break: break-all;
@@ -36,7 +36,7 @@
     opacity: 0;
     transform: translateY(-0.15em) scale(0.6);
     animation: pop 220ms cubic-bezier(.2,.9,.25,1.2) forwards,
-               fade 4.5s ease-out forwards;
+               fade 5.625s ease-out forwards;
     margin-right: 0.02em;
     will-change: opacity, transform;
   }
@@ -180,7 +180,7 @@
     stage.appendChild(span);
 
     // Remove node after its fade animation completes
-    setTimeout(() => { span.remove(); }, 5000);
+    setTimeout(() => { span.remove(); }, 6250);
 
     resetIfOverflow();
   }
