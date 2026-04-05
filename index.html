@@ -121,6 +121,7 @@
   const stage = document.getElementById('stage');
   const startScreen = document.getElementById('start');
   const exitBtn = document.getElementById('exit');
+  let hueIndex = 0;
 
   function enterFullscreen() {
     const el = document.documentElement;
@@ -173,6 +174,9 @@
     }
     // subtle per-letter delay so rapid mashes still feel individual
     span.style.animationDelay = '0ms, 0ms';
+    // rainbow cycle: each letter advances the hue
+    span.style.color = `hsl(${hueIndex}, 95%, 62%)`;
+    hueIndex = (hueIndex + 37) % 360;
     stage.appendChild(span);
 
     // Remove node after its fade animation completes
