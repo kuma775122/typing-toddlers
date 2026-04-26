@@ -112,7 +112,7 @@
 <body>
   <div id="start">
     Tap to Start
-    <small>press any key to type · click ✕ to exit</small>
+    <small>mash any key · click ✕ to exit</small>
   </div>
   <div id="stage"></div>
   <button id="exit" aria-label="Exit">✕</button>
@@ -122,6 +122,42 @@
   const startScreen = document.getElementById('start');
   const exitBtn = document.getElementById('exit');
   let hueIndex = 0;
+
+  const SURPRISE_EMOJIS = ['🦄', '🌠'];
+  let pressesUntilSurprise = randomSurpriseInterval();
+
+  function randomSurpriseInterval() {
+    return 4 + Math.floor(Math.random() * 4); // 4–7 inclusive
+  }
+
+  // Map non-printing keys to a single visible glyph so toddlers see
+  // something for every key on the keyboard.
+  const SPECIAL_KEY_GLYPHS = {
+    'Enter': '↵',
+    'Tab': '⇥',
+    'Backspace': '⌫',
+    'Delete': '⌦',
+    'Shift': '⇧',
+    'Control': '⌃',
+    'Alt': '⌥',
+    'Meta': '✦',
+    'CapsLock': '⇪',
+    'Escape': '★',
+    'ArrowUp': '↑',
+    'ArrowDown': '↓',
+    'ArrowLeft': '←',
+    'ArrowRight': '→',
+    'Home': '⇱',
+    'End': '⇲',
+    'PageUp': '⇞',
+    'PageDown': '⇟',
+    'Insert': '⎀',
+    'ContextMenu': '☰',
+    'NumLock': '#',
+    'ScrollLock': '⇳',
+    'Pause': '❚❚',
+    'PrintScreen': '⎙',
+  };
 
   function enterFullscreen() {
     const el = document.documentElement;
@@ -163,7 +199,7 @@
     }
   }
 
-  function addGlyph(char) {
+  function addGlyph(char, opts = {}) {
     const span = document.createElement('span');
     span.className = 'glyph';
     if (char === ' ') {
@@ -174,9 +210,13 @@
     }
     // subtle per-letter delay so rapid mashes still feel individual
     span.style.animationDelay = '0ms, 0ms';
-    // rainbow cycle: each letter advances the hue
-    span.style.color = `hsl(${hueIndex}, 95%, 62%)`;
-    hueIndex = (hueIndex + 37) % 360;
+    if (opts.colored === false) {
+      // Emojis keep their native colors instead of being recolored.
+    } else {
+      // rainbow cycle: each letter advances the hue
+      span.style.color = `hsl(${hueIndex}, 95%, 62%)`;
+      hueIndex = (hueIndex + 37) % 360;
+    }
     stage.appendChild(span);
 
     // Remove node after its fade animation completes
@@ -185,30 +225,46 @@
     resetIfOverflow();
   }
 
-  // Keyboard input
+  function addCharOrSurprise(char) {
+    pressesUntilSurprise -= 1;
+    if (pressesUntilSurprise <= 0) {
+      const emoji = SURPRISE_EMOJIS[Math.floor(Math.random() * SURPRISE_EMOJIS.length)];
+      addGlyph(emoji, { colored: false });
+      pressesUntilSurprise = randomSurpriseInterval();
+    } else {
+      addGlyph(char);
+    }
+  }
+
+  // Keyboard input — every key registers and shows something on screen.
+  // The X button in the corner is the only way out.
   window.addEventListener('keydown', (e) => {
     if (startScreen.style.display !== 'none') return;
 
-    // Ignore modifier-only / navigation keys
-    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    // Let the parent's browser shortcuts (Cmd+Q, Cmd+W, Cmd+R, etc.) still
+    // work as an escape hatch — display nothing and don't preventDefault.
+    if (e.metaKey || e.ctrlKey) return;
 
-    if (e.key === 'Escape') {
-      exitBtn.click();
-      return;
-    }
+    // Stop default browser behavior for everything else: Tab moving focus,
+    // Space scrolling, F1 opening help, '/' opening Quick Find, etc.
+    e.preventDefault();
 
-    let ch = null;
+    let ch;
     if (e.key === ' ' || e.code === 'Space') {
       ch = ' ';
-      e.preventDefault();
     } else if (e.key.length === 1) {
       ch = e.key.toUpperCase();
-    } else if (e.key === 'Enter') {
-      // force new line by clearing overflow or adding spacer
-      ch = ' ';
+    } else if (SPECIAL_KEY_GLYPHS[e.key]) {
+      ch = SPECIAL_KEY_GLYPHS[e.key];
+    } else if (e.key.startsWith('F') && /^F\d+$/.test(e.key)) {
+      ch = e.key; // F1, F2, …
+    } else {
+      // Unknown key — show its first character so the toddler always sees
+      // something land on screen.
+      ch = (e.key || '★').charAt(0).toUpperCase();
     }
 
-    if (ch !== null) addGlyph(ch);
+    addCharOrSurprise(ch);
   });
 
   // Touch support for tablets - tap anywhere to add a random letter
@@ -218,7 +274,7 @@
     if (e.target === exitBtn) return;
     e.preventDefault();
     for (let i = 0; i < e.touches.length; i++) {
-      addGlyph(alphabet[Math.floor(Math.random() * alphabet.length)]);
+      addCharOrSurprise(alphabet[Math.floor(Math.random() * alphabet.length)]);
     }
   }, { passive: false });
 </script>
